@@ -8,29 +8,46 @@
 import UIKit
 import WebKit
 
-class ViewController: UIViewController, WKNavigationDelegate {
+class ViewController: UIViewController, WKNavigationDelegate,UISearchBarDelegate{
     
-    var webView :WKWebView!
+    @IBOutlet var webView: WKWebView!
     var progressView : UIProgressView!
-    var websites = ["apple.com","hackingwithswift","google.com","wikipedia.org"]
+    var bookmarks : [String]!
+    var initialSite :String!
+    var searchBar:UISearchBar!
+    
+    
     override func loadView() {
+        
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = UIColor.white
+        navigationController?.navigationBar.standardAppearance = appearance
+        navigationController?.navigationBar.scrollEdgeAppearance = appearance
+        
         webView = WKWebView()
         webView.navigationDelegate = self
         view = webView
+        searchBar?.delegate = self
     }
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
+    
+    
+        searchBar = UISearchBar(frame: CGRectMake(0, 0, 250, 20))
+        searchBar.placeholder = "www.google.com"
         
-        let appearance = UINavigationBarAppearance()
-        appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = UIColor.white
-        navigationController?.navigationBar.standardAppearance = appearance;
-        navigationController?.navigationBar.scrollEdgeAppearance = navigationController?.navigationBar.standardAppearance
+        let searchBarButton = UIBarButtonItem(customView:searchBar)
         
+//        let hamburgerButton =  UIBarButtonItem(image:UIImage(systemName: "line.horizontal.3"),style:.plain,target: self , action: #selector(openTapped))
+       
+        let hamburgerButton = UIBarButtonItem(barButtonSystemItem: .bookmarks, target: self, action: #selector(openTapped))
         
-        navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Open", style: .plain, target: self , action: #selector(openTapped))
+        let searchButton = UIBarButtonItem(title: "Search", style: .plain, target: self, action: #selector(search))
+        
+        navigationItem.rightBarButtonItems = [hamburgerButton,searchButton,searchBarButton]
         
         let spacer = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
         
@@ -42,7 +59,7 @@ class ViewController: UIViewController, WKNavigationDelegate {
         
         progressView = UIProgressView(progressViewStyle: .default)
         
-       
+        progressView.frame = CGRect(x: 200, y: 0, width: 250,height: 100)
         
         let progressButton = UIBarButtonItem(customView: progressView)
         
@@ -52,11 +69,12 @@ class ViewController: UIViewController, WKNavigationDelegate {
         
         webView.addObserver(self, forKeyPath: #keyPath(WKWebView.estimatedProgress), options: .new, context: nil)
         
-        let url = URL(string:"https://" + websites[0])!
+        let url = URL(string:"https://" + initialSite)!
         webView.load(URLRequest(url: url))
         webView.allowsBackForwardNavigationGestures = true
     }
-    
+  
+   
     @objc func goBack(){
         if (self.webView.canGoBack) {
                     self.webView.goBack()
@@ -68,21 +86,38 @@ class ViewController: UIViewController, WKNavigationDelegate {
                     self.webView.goForward()
                 }
     }
-                                      
+    
+    @objc func search(){
+        let query = "https://www.google.com/search?q="+searchBar.text!
+        let url = URL(string:query)!
+        webView.load(URLRequest(url: url))
+    }
+    
     @objc func openTapped(){
         
-        let ac = UIAlertController(title: "Open page ...", message: nil, preferredStyle: .actionSheet)
+        let ac = UIAlertController(title: "Bookmarks", message: nil, preferredStyle: .actionSheet)
         
-        for website in websites{
+        for website in bookmarks{
             ac.addAction(UIAlertAction(title: website, style: .default , handler: openPage))
         }
+        ac.addAction(UIAlertAction(title: "Add to Bookmarks", style:.default ,handler:addBookmark))
         ac.addAction(UIAlertAction(title: "Cancel", style: .cancel))
         
         ac.popoverPresentationController?.barButtonItem = navigationItem.rightBarButtonItem
         
         present(ac,animated:true)
     }
-    
+    func addBookmark(action: UIAlertAction! = nil){
+        let url = webView.url?.absoluteString
+        if let site = url?.split(separator: "/")[1]{
+            let siteString = String(site)
+            bookmarks.append(siteString)
+        }
+        else{
+           return
+        }
+//        bookmarks.append()
+    }
     func openPage(action: UIAlertAction! ){
         guard let actionTitle = action.title else{ return }
         guard let url = URL(string:"https://" + actionTitle) else { return }
@@ -91,7 +126,7 @@ class ViewController: UIViewController, WKNavigationDelegate {
     }
     
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        title = webView.title
+        searchBar.text = webView.url?.absoluteString
     }
     
     override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
@@ -100,20 +135,6 @@ class ViewController: UIViewController, WKNavigationDelegate {
         }
     }
     
-    func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
-        
-        let url = navigationAction.request.url
-        
-        if let host = url?.host{
-            for website in websites {
-                if host.contains(website){
-                    decisionHandler(.allow)
-                    return
-                }
-            }
-        }
-        
-        decisionHandler(.cancel)
-    }
+    
 }
 
