@@ -8,15 +8,14 @@
 import UIKit
 import WebKit
 
-class ViewController: UIViewController, WKNavigationDelegate,UISearchBarDelegate{
+class ViewController: UIViewController, WKNavigationDelegate{
     
     @IBOutlet var webView: WKWebView!
     var progressView : UIProgressView!
     var bookmarks : [String]!
     var initialSite :String!
     var searchBar:UISearchBar!
-    
-    
+   
     override func loadView() {
         
         let appearance = UINavigationBarAppearance()
@@ -28,7 +27,7 @@ class ViewController: UIViewController, WKNavigationDelegate,UISearchBarDelegate
         webView = WKWebView()
         webView.navigationDelegate = self
         view = webView
-        searchBar?.delegate = self
+        
     }
     
     override func viewDidLoad() {
@@ -40,8 +39,7 @@ class ViewController: UIViewController, WKNavigationDelegate,UISearchBarDelegate
         searchBar.placeholder = "www.google.com"
         
         let searchBarButton = UIBarButtonItem(customView:searchBar)
-        
-//        let hamburgerButton =  UIBarButtonItem(image:UIImage(systemName: "line.horizontal.3"),style:.plain,target: self , action: #selector(openTapped))
+
        
         let hamburgerButton = UIBarButtonItem(barButtonSystemItem: .bookmarks, target: self, action: #selector(openTapped))
         
@@ -73,7 +71,8 @@ class ViewController: UIViewController, WKNavigationDelegate,UISearchBarDelegate
         webView.load(URLRequest(url: url))
         webView.allowsBackForwardNavigationGestures = true
     }
-  
+    
+    
    
     @objc func goBack(){
         if (self.webView.canGoBack) {
@@ -88,7 +87,8 @@ class ViewController: UIViewController, WKNavigationDelegate,UISearchBarDelegate
     }
     
     @objc func search(){
-        let query = "https://www.google.com/search?q="+searchBar.text!
+      
+        let query = "https://www.google.com/search?q="+(searchBar.text?.replacingOccurrences(of: " ", with: "+") ?? "")
         let url = URL(string:query)!
         webView.load(URLRequest(url: url))
     }
@@ -116,7 +116,6 @@ class ViewController: UIViewController, WKNavigationDelegate,UISearchBarDelegate
         else{
            return
         }
-//        bookmarks.append()
     }
     func openPage(action: UIAlertAction! ){
         guard let actionTitle = action.title else{ return }
@@ -126,7 +125,7 @@ class ViewController: UIViewController, WKNavigationDelegate,UISearchBarDelegate
     }
     
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        searchBar.text = webView.url?.absoluteString
+        searchBar.placeholder = webView.url?.absoluteString
     }
     
     override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
